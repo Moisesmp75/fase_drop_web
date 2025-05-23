@@ -1,8 +1,14 @@
 import axios from 'axios';
+import { setupAxiosInterceptors as setupInterceptors } from './axiosConfig';
+
+// Función para obtener el token
+export const getToken = () => {
+  return localStorage.getItem('token');
+};
 
 // Función para configurar el token en las peticiones
 export const setupAxiosInterceptors = () => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }

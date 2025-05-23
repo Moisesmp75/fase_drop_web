@@ -4,8 +4,12 @@ import RegisterPage from './modules/auth/pages/RegisterPage';
 import LoginPage from './modules/auth/pages/LoginPage';
 import FormPage from './modules/predictions/pages/FormPage'; // Importar el componente para registrar alumnos
 import HistoryPage from './modules/predictions/pages/HistoryPage';
+import DashboardPage from './modules/dashboard/pages/DashboardPage';
+import AlumnosPage from './modules/alumnos/pages/AlumnosPage';
 import { AppBar, Button, Link, Toolbar, Typography } from '@mui/material';
 import { setupAxiosInterceptors, isAuthenticated, logout } from './utils/auth';
+import { LoadingProvider, useLoading } from './utils/LoadingContext';
+import { setupAxiosInterceptors as setupAxiosLoading } from './utils/axiosConfig';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -20,6 +24,14 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  const handleAlumnos = () => {
+    navigate('/alumnos');
+  };
+
   const handleRegister = () => {
     navigate('/form');
   };
@@ -32,8 +44,14 @@ const Navbar = () => {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Frank Chupa Pinga APP
+          Predicción Escolar
         </Typography>
+        <Button color="inherit" onClick={handleDashboard}>
+          Dashboard
+        </Button>
+        <Button color="inherit" onClick={handleAlumnos}>
+          Alumnos
+        </Button>
         <Button color="inherit" onClick={handleRegister}>
           Registrar
         </Button>
@@ -56,10 +74,13 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const App = () => {
+const AppContent = () => {
+  const { setLoading } = useLoading();
+
   useEffect(() => {
     setupAxiosInterceptors();
-  }, []);
+    setupAxiosLoading(setLoading);
+  }, [setLoading]);
 
   return (
     <Router>
@@ -68,6 +89,22 @@ const App = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/alumnos"
+          element={
+            <ProtectedRoute>
+              <AlumnosPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/form"
           element={
@@ -86,6 +123,14 @@ const App = () => {
         />
       </Routes>
     </Router>
+  );
+};
+
+const App = () => {
+  return (
+    <LoadingProvider>
+      <AppContent />
+    </LoadingProvider>
   );
 };
 

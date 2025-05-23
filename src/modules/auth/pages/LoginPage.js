@@ -28,7 +28,7 @@ const LoginPage = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       console.log('Inicio de sesión exitoso:', response.data);
-      navigate('/form');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       setError('Error al iniciar sesión. Por favor, verifica tus credenciales.');
