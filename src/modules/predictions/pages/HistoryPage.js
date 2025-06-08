@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  TextField, Button, Container, Typography, Table, TableHead, TableRow, TableCell, 
-  TableBody, Grid, Card, CardContent, Paper 
-} from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import config from '../../../config';
+import { 
+  TextField, Button, Container, Typography, Table, TableHead, TableRow, TableCell, 
+  TableBody, Grid, Card, CardContent, Paper, Box // <-- agrega Box aquí
+} from '@mui/material';
 
 const HistoryPage = ({ usuario_id }) => {
-
   const historialdata = [
     { nombre: 'Ana', apellido: 'García', grado: 3, seccion: 'A', prediccion: true },
     { nombre: 'Luis', apellido: 'Pérez', grado: 2, seccion: 'B', prediccion: false },
@@ -21,8 +20,10 @@ const HistoryPage = ({ usuario_id }) => {
     { nombre: 'Sebastián', apellido: 'Vargas', grado: 1, seccion: 'B', prediccion: false }
   ];
 
-  const [historial, setHistorial] = useState(historialdata);
+  const [historial, setHistorial] = useState([]);
   const [searchParams, setSearchParams] = useState({ nombre: '', apellido: '' });
+  const [alumnos, setAlumnos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchHistorial = async () => {
     try {
@@ -36,19 +37,47 @@ const HistoryPage = ({ usuario_id }) => {
     }
   };
 
+  // Cambia fetchAlumnos para aceptar filtros
+  const fetchAlumnos = async (params = {}) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${config.API_URL}${config.ENDPOINTS.ALUMNO}`, {
+        params: { usuario_id, ...params }
+      });
+      setAlumnos(Array.isArray(response.data.alumnos) ? response.data.alumnos : []);
+    } catch (error) {
+      setAlumnos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlumnos();
+    // eslint-disable-next-line
+  }, []);
+
   useEffect(() => {
     fetchHistorial();
     setHistorial(historial);
   }, []);
 
+  // Actualiza handleSearch para usar los filtros
   const handleSearch = () => {
-    fetchHistorial();
+    fetchAlumnos(searchParams);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSearchParams(prevState => ({ ...prevState, [name]: value }));
   };
+
+  // Filtrado en frontend antes de renderizar la tabla
+  const alumnosFiltrados = alumnos.filter(alumno => {
+    const nombreMatch = alumno.nombre?.toLowerCase().includes(searchParams.nombre.toLowerCase());
+    const apellidoMatch = alumno.apellido?.toLowerCase().includes(searchParams.apellido.toLowerCase());
+    return nombreMatch && apellidoMatch;
+  });
 
   return (
     <div style={{
@@ -106,14 +135,14 @@ const HistoryPage = ({ usuario_id }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {historial.map((registro, index) => (
-                <TableRow key={index}>
-                  <TableCell>{registro.nombre}</TableCell>
-                  <TableCell>{registro.apellido}</TableCell>
-                  <TableCell>{registro.grado}</TableCell>
-                  <TableCell>{registro.seccion}</TableCell>
+              {alumnosFiltrados.map((alumno, index) => (
+                <TableRow key={alumno.id || index}>
+                  <TableCell>{alumno.nombre}</TableCell>
+                  <TableCell>{alumno.apellido}</TableCell>
+                  <TableCell>{alumno.ultimoGrado}</TableCell>
+                  <TableCell>{alumno.ultimaSeccion}</TableCell>
                   <TableCell>
-                    {registro.prediccion ? (
+                    {alumno.ultimaPrediccion ? (
                       <span style={{ color: 'red', fontWeight: 'bold' }}>Sí</span>
                     ) : (
                       <span style={{ color: 'green', fontWeight: 'bold' }}>No</span>
@@ -124,6 +153,20 @@ const HistoryPage = ({ usuario_id }) => {
             </TableBody>
           </Table>
         </Paper>
+
+        <Box sx={{ p: 3 }}>
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Typography variant="h5">Historial</Typography>
+            {loading ? (
+              <Typography>Cargando...</Typography>
+            ) : (
+              <Typography variant="body1">
+                Cantidad de alumnos registrados: <b>{alumnos.length}</b>
+              </Typography>
+            )}
+          </Paper>
+          {/* Aquí puedes mostrar más información del historial */}
+        </Box>
       </Container>
     </div>
   );

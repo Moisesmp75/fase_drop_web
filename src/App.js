@@ -52,9 +52,9 @@ const Navbar = () => {
         <Button color="inherit" onClick={handleAlumnos}>
           Alumnos
         </Button>
-        <Button color="inherit" onClick={handleRegister}>
+        {/* <Button color="inherit" onClick={handleRegister}>
           Registrar
-        </Button>
+        </Button> */}
         <Button color="inherit" onClick={handleHistory}>
           Historial
         </Button>
@@ -105,14 +105,14 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/form"
           element={
             <ProtectedRoute>
               <FormPage />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/historial"
           element={

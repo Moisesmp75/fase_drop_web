@@ -118,8 +118,9 @@ const NotasAlumnoDialog = ({ open, onClose, alumno }) => {
               <TableRow>
                 <TableCell>Año</TableCell>
                 <TableCell>Periodo</TableCell>
-                <TableCell>Grado</TableCell>
-                <TableCell>Sección</TableCell>
+                <TableCell>Salon</TableCell>
+                {/* <TableCell>Grado</TableCell>
+                <TableCell>Sección</TableCell> */}
                 <TableCell>Matemáticas</TableCell>
                 <TableCell>Comunicación</TableCell>
                 <TableCell>Ciencias Sociales</TableCell>
@@ -128,6 +129,7 @@ const NotasAlumnoDialog = ({ open, onClose, alumno }) => {
                 <TableCell>Asistencia</TableCell>
                 <TableCell>Conducta</TableCell>
                 <TableCell>Promedio</TableCell>
+                <TableCell>Prediccion</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -135,8 +137,9 @@ const NotasAlumnoDialog = ({ open, onClose, alumno }) => {
                 <TableRow key={nota.id}>
                   <TableCell>{nota.anio}</TableCell>
                   <TableCell>{nota.tipoPeriodo} {nota.valorPeriodo}</TableCell>
-                  <TableCell>{nota.grado}°</TableCell>
-                  <TableCell>{nota.seccion}</TableCell>
+                  {/* <TableCell>{nota.grado}°</TableCell>
+                  <TableCell>{nota.seccion}</TableCell> */}
+                  <TableCell>{nota.salon}</TableCell>
                   <TableCell>{nota.matematicas}</TableCell>
                   <TableCell>{nota.comunicacion}</TableCell>
                   <TableCell>{nota.ciencias_sociales}</TableCell>
@@ -145,6 +148,7 @@ const NotasAlumnoDialog = ({ open, onClose, alumno }) => {
                   <TableCell>{nota.asistencia}</TableCell>
                   <TableCell>{nota.conducta}</TableCell>
                   <TableCell>{calcularPromedio(nota)}</TableCell>
+                  <TableCell>{nota.prediccion ? 'Si' : 'No'}</TableCell>
                 </TableRow>
               ))}
               {notasFiltradas.length === 0 && (
