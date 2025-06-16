@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Container, Typography, Grid, Link, Box, Paper } from '@mui/material';
+import { TextField, Button, Container, Typography, Grid, Link, Box, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import config from '../../../config';
@@ -7,6 +7,8 @@ import config from '../../../config';
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [openDialog, setOpenDialog] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -20,11 +22,9 @@ const LoginPage = () => {
       const response = await axios.post(`${config.API_URL}${config.ENDPOINTS.LOGIN}`, formData);
       const { token, user } = response.data;
       
-      // Guardar el token y la información del usuario en localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
-      // Configurar el token por defecto para todas las peticiones futuras
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       console.log('Inicio de sesión exitoso:', response.data);
@@ -33,6 +33,16 @@ const LoginPage = () => {
       console.error('Error al iniciar sesión:', error);
       setError('Error al iniciar sesión. Por favor, verifica tus credenciales.');
     }
+  };
+
+  const handleRecoverySubmit = (e) => {
+    e.preventDefault();
+    if (!recoveryEmail) {
+      return;
+    }
+    setOpenDialog(false);
+    setError('Se ha enviado un correo para seguir los pasos en cambiar tu contraseña');
+    setRecoveryEmail('');
   };
 
   return (
@@ -56,7 +66,7 @@ const LoginPage = () => {
           </Typography>
 
           {error && (
-            <Typography color="error" align="center" sx={{ mb: 2 }}>
+            <Typography color={error.includes('Error') ? "error" : "success"} align="center" sx={{ mb: 2 }}>
               {error}
             </Typography>
           )}
@@ -100,8 +110,63 @@ const LoginPage = () => {
               </Typography>
             </Grid>
           </Grid>
+
+          <Grid container justifyContent="center" sx={{ mt: 1 }}>
+            <Grid item>
+              <Link 
+                onClick={() => setOpenDialog(true)} 
+                underline="hover" 
+                sx={{ cursor: 'pointer' }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </Grid>
+          </Grid>
         </Paper>
       </Container>
+
+      <Dialog 
+        open={openDialog} 
+        onClose={() => {
+          setOpenDialog(false);
+          setRecoveryEmail('');
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Recuperar Contraseña</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleRecoverySubmit} sx={{ mt: 2 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Correo Electrónico"
+              type="email"
+              fullWidth
+              value={recoveryEmail}
+              onChange={(e) => setRecoveryEmail(e.target.value)}
+              required
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setOpenDialog(false);
+              setRecoveryEmail('');
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleRecoverySubmit} 
+            color="primary"
+            disabled={!recoveryEmail}
+          >
+            Enviar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

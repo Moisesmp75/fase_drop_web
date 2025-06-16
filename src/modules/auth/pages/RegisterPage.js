@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { TextField, Button, Container, Typography, Grid, Box, Paper, Link } from '@mui/material';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Para redirigir al login
-import config from '../../../config';
+import { 
+  TextField, 
+  Button, 
+  Container, 
+  Typography, 
+  Grid, 
+  Box, 
+  Paper, 
+  Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -11,29 +22,34 @@ const RegisterPage = () => {
     password: ''
   });
   const [message, setMessage] = useState('');
-  const navigate = useNavigate(); // Hook para redirigir
+  const [openDialog, setOpenDialog] = useState(false);
+  const navigate = useNavigate();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validar que el correo termine en @gmail.com
-    if (!formData.email.endsWith('@gmail.com')) {
-      setMessage('El correo electrónico debe ser de dominio @gmail.com');
+    // Validar formato de correo electrónico
+    if (!validateEmail(formData.email)) {
+      setMessage('Por favor, ingrese un correo electrónico válido');
       return;
     }
 
-    try {
-      const response = await axios.post(`${config.API_URL}/api/register`, formData);
-      setMessage(response.data.message);
-      setMessage('Registro exitoso');
-    } catch (error) {
-      console.error('Error al registrar el usuario:', error);
-      setMessage('Error al registrar el usuario');
-    }
+    // Mostrar el modal de confirmación
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    navigate('/login');
   };
 
   return (
@@ -72,6 +88,8 @@ const RegisterPage = () => {
               margin="normal"
               onChange={handleChange}
               required
+              error={message.includes('correo')}
+              helperText={message.includes('correo') ? message : ''}
             />
             <TextField
               name="password"
@@ -93,7 +111,7 @@ const RegisterPage = () => {
             </Button>
           </form>
 
-          {message && (
+          {message && !message.includes('correo') && (
             <Typography
               variant="body1"
               color={message.includes("Error") ? "error" : "success"}
@@ -103,7 +121,6 @@ const RegisterPage = () => {
             </Typography>
           )}
 
-          {/* Enlace para regresar al Login */}
           <Grid container justifyContent="center" sx={{ mt: 3 }}>
             <Grid item>
               <Typography variant="body2">
@@ -116,6 +133,20 @@ const RegisterPage = () => {
           </Grid>
         </Paper>
       </Container>
+
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Registro Exitoso</DialogTitle>
+        <DialogContent>
+          <Typography>
+            El equipo te mandará la confirmación de la creación de tu usuario al correo registrado.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

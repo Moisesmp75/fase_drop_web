@@ -23,6 +23,7 @@ import {
   Alert
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import config from '../../../config';
 import { getUser } from '../../../utils/auth';
@@ -35,6 +36,7 @@ const AlumnosPage = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openNotaDialog, setOpenNotaDialog] = useState(false);
   const [openNotasDialog, setOpenNotasDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedAlumno, setSelectedAlumno] = useState(null);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -140,6 +142,26 @@ const AlumnosPage = () => {
     setOpenNotasDialog(true);
   };
 
+  const handleDeleteClick = (alumno) => {
+    setSelectedAlumno(alumno);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${config.API_URL}${config.ENDPOINTS.ALUMNO}/${selectedAlumno.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOpenDeleteDialog(false);
+      showSuccess('Alumno eliminado exitosamente');
+      fetchAlumnos();
+    } catch (error) {
+      console.error('Error al eliminar alumno:', error);
+      showError(error.response?.data?.message || 'Error al eliminar el alumno');
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Container maxWidth="lg">
@@ -220,9 +242,22 @@ const AlumnosPage = () => {
                         color="secondary"
                         size="small"
                         onClick={() => handleVerNotas(alumno)}
+                        sx={{ mr: 1 }}
                       >
                         Ver Notas
                       </Button>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDeleteClick(alumno)}
+                        size="small"
+                        sx={{ 
+                          '&:hover': {
+                            backgroundColor: 'rgba(211, 47, 47, 0.04)'
+                          }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -320,6 +355,25 @@ const AlumnosPage = () => {
           onClose={() => setOpenNotasDialog(false)}
           alumno={selectedAlumno}
         />
+
+        {/* Diálogo de confirmación para eliminar */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+        >
+          <DialogTitle>Confirmar Eliminación</DialogTitle>
+          <DialogContent>
+            <Typography>
+              ¿Está seguro que desea eliminar al alumno {selectedAlumno?.nombre} {selectedAlumno?.apellido}?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDeleteDialog(false)}>Cancelar</Button>
+            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
       <Snackbar
         open={snackbar.open}

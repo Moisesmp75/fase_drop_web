@@ -2,10 +2,9 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import RegisterPage from './modules/auth/pages/RegisterPage';
 import LoginPage from './modules/auth/pages/LoginPage';
-import FormPage from './modules/predictions/pages/FormPage'; // Importar el componente para registrar alumnos
 import HistoryPage from './modules/predictions/pages/HistoryPage';
-import DashboardPage from './modules/dashboard/pages/DashboardPage';
 import AlumnosPage from './modules/alumnos/pages/AlumnosPage';
+import DashboardPage from './modules/dashboard/pages/DashboardPage';
 import { AppBar, Button, Link, Toolbar, Typography } from '@mui/material';
 import { setupAxiosInterceptors, isAuthenticated, logout } from './utils/auth';
 import { LoadingProvider, useLoading } from './utils/LoadingContext';
@@ -50,7 +49,7 @@ const Navbar = () => {
           Dashboard
         </Button>
         <Button color="inherit" onClick={handleAlumnos}>
-          Alumnos
+          Gestion de Alumnos
         </Button>
         {/* <Button color="inherit" onClick={handleRegister}>
           Registrar
@@ -93,7 +92,7 @@ const AppContent = () => {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <DashboardPage/>
             </ProtectedRoute>
           }
         />

@@ -3,49 +3,78 @@ import axios from 'axios';
 import config from '../../../config';
 import { 
   TextField, Button, Container, Typography, Table, TableHead, TableRow, TableCell, 
-  TableBody, Grid, Card, CardContent, Paper, Box // <-- agrega Box aquí
+  TableBody, Grid, Card, CardContent, Paper, Box, MenuItem, Snackbar, Alert
 } from '@mui/material';
+import PrediccionesAlumnoDialog from '../components/PrediccionesAlumnoDialog';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../../../utils/auth';
 
 const HistoryPage = ({ usuario_id }) => {
-  const historialdata = [
-    { nombre: 'Ana', apellido: 'García', grado: 3, seccion: 'A', prediccion: true },
-    { nombre: 'Luis', apellido: 'Pérez', grado: 2, seccion: 'B', prediccion: false },
-    { nombre: 'María', apellido: 'Lopez', grado: 1, seccion: 'A', prediccion: false },
-    { nombre: 'Carlos', apellido: 'Ramírez', grado: 4, seccion: 'B', prediccion: true },
-    { nombre: 'Sofía', apellido: 'Torres', grado: 5, seccion: 'A', prediccion: false },
-    { nombre: 'Diego', apellido: 'Fernández', grado: 3, seccion: 'B', prediccion: true },
-    { nombre: 'Valeria', apellido: 'Mendoza', grado: 2, seccion: 'A', prediccion: false },
-    { nombre: 'Mateo', apellido: 'Ruiz', grado: 5, seccion: 'B', prediccion: false },
-    { nombre: 'Isabella', apellido: 'Chávez', grado: 4, seccion: 'A', prediccion: true },
-    { nombre: 'Sebastián', apellido: 'Vargas', grado: 1, seccion: 'B', prediccion: false }
-  ];
-
   const [historial, setHistorial] = useState([]);
-  const [searchParams, setSearchParams] = useState({ nombre: '', apellido: '' });
+  const [searchParams, setSearchParams] = useState({ 
+    nombre: '', 
+    apellido: '',
+    grado: '',
+    seccion: ''
+  });
   const [alumnos, setAlumnos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAlumno, setSelectedAlumno] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const navigate = useNavigate();
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   const fetchHistorial = async () => {
     try {
       const response = await axios.get(`${config.API_URL}${config.ENDPOINTS.ALUMNO}`, {
         params: { usuario_id, ...searchParams }
       });
-      // setHistorial(response.data);
       setHistorial(historial)
     } catch (error) {
       console.error('Error al obtener el historial:', error);
+      if (error.response?.status === 401) {
+        logout();
+        navigate('/login');
+      }
     }
   };
 
-  // Cambia fetchAlumnos para aceptar filtros
   const fetchAlumnos = async (params = {}) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${config.API_URL}${config.ENDPOINTS.ALUMNO}`, {
-        params: { usuario_id, ...params }
-      });
-      setAlumnos(Array.isArray(response.data.alumnos) ? response.data.alumnos : []);
+      if (params.grado || params.seccion) {
+        const response = await axios.get(`${config.API_URL}${config.ENDPOINTS.ALUMNO}`, {
+          params: { usuario_id, ...params }
+        });
+        setAlumnos(Array.isArray(response.data.alumnos) ? response.data.alumnos : []);
+      } else {
+        const response = await axios.get(`${config.API_URL}${config.ENDPOINTS.ALUMNO}`, {
+          params: { usuario_id }
+        });
+        const todosAlumnos = Array.isArray(response.data.alumnos) ? response.data.alumnos : [];
+        const alumnosFiltrados = todosAlumnos.filter(alumno => {
+          const nombreMatch = alumno.nombre?.toLowerCase().includes(params.nombre?.toLowerCase() || '');
+          const apellidoMatch = alumno.apellido?.toLowerCase().includes(params.apellido?.toLowerCase() || '');
+          return nombreMatch && apellidoMatch;
+        });
+        setAlumnos(alumnosFiltrados);
+      }
     } catch (error) {
+      console.error('Error al obtener alumnos:', error);
+      if (error.response?.status === 401) {
+        logout();
+        navigate('/login');
+      } else {
+        setSnackbar({
+          open: true,
+          message: error.response?.data?.message || 'Error al obtener la lista de alumnos',
+          severity: 'error'
+        });
+      }
       setAlumnos([]);
     } finally {
       setLoading(false);
@@ -54,15 +83,12 @@ const HistoryPage = ({ usuario_id }) => {
 
   useEffect(() => {
     fetchAlumnos();
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
     fetchHistorial();
-    setHistorial(historial);
   }, []);
 
-  // Actualiza handleSearch para usar los filtros
   const handleSearch = () => {
     fetchAlumnos(searchParams);
   };
@@ -72,12 +98,19 @@ const HistoryPage = ({ usuario_id }) => {
     setSearchParams(prevState => ({ ...prevState, [name]: value }));
   };
 
-  // Filtrado en frontend antes de renderizar la tabla
-  const alumnosFiltrados = alumnos.filter(alumno => {
-    const nombreMatch = alumno.nombre?.toLowerCase().includes(searchParams.nombre.toLowerCase());
-    const apellidoMatch = alumno.apellido?.toLowerCase().includes(searchParams.apellido.toLowerCase());
-    return nombreMatch && apellidoMatch;
-  });
+  const handleRowClick = (alumno) => {
+    setSelectedAlumno(alumno);
+    setOpenDialog(true);
+  };
+
+  const handleNotaDeleted = (alumnoActualizado) => {
+    // Actualizar localmente el alumno en el array de alumnos
+    setAlumnos(prevAlumnos => 
+      prevAlumnos.map(alumno => 
+        alumno.id === alumnoActualizado.id ? alumnoActualizado : alumno
+      )
+    );
+  };
 
   return (
     <div style={{
@@ -91,7 +124,6 @@ const HistoryPage = ({ usuario_id }) => {
           Historial de Predicciones
         </Typography>
 
-        {/* Filtros de búsqueda en una Card */}
         <Card elevation={6} style={{ marginBottom: '30px', borderRadius: '10px' }}>
           <CardContent>
             <Grid container spacing={2}>
@@ -113,6 +145,40 @@ const HistoryPage = ({ usuario_id }) => {
                   fullWidth
                 />
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  name="grado"
+                  label="Grado"
+                  value={searchParams.grado}
+                  onChange={handleChange}
+                  fullWidth
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  {[1, 2, 3, 4, 5].map((grado) => (
+                    <MenuItem key={grado} value={grado}>
+                      {grado}°
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  name="seccion"
+                  label="Sección"
+                  value={searchParams.seccion}
+                  onChange={handleChange}
+                  fullWidth
+                >
+                  <MenuItem value="">Todas</MenuItem>
+                  {['A', 'B'].map((seccion) => (
+                    <MenuItem key={seccion} value={seccion}>
+                      {seccion}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
               <Grid item xs={12} style={{ textAlign: 'center', marginTop: '10px' }}>
                 <Button variant="contained" color="primary" onClick={handleSearch}>
                   Buscar
@@ -122,7 +188,6 @@ const HistoryPage = ({ usuario_id }) => {
           </CardContent>
         </Card>
 
-        {/* Tabla */}
         <Paper elevation={6} style={{ borderRadius: '10px' }}>
           <Table>
             <TableHead style={{ backgroundColor: '#1976d2' }}>
@@ -135,8 +200,15 @@ const HistoryPage = ({ usuario_id }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {alumnosFiltrados.map((alumno, index) => (
-                <TableRow key={alumno.id || index}>
+              {alumnos.map((alumno, index) => (
+                <TableRow 
+                  key={index}
+                  onClick={() => handleRowClick(alumno)}
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: '#f5f5f5' }
+                  }}
+                >
                   <TableCell>{alumno.nombre}</TableCell>
                   <TableCell>{alumno.apellido}</TableCell>
                   <TableCell>{alumno.ultimoGrado}</TableCell>
@@ -161,12 +233,29 @@ const HistoryPage = ({ usuario_id }) => {
               <Typography>Cargando...</Typography>
             ) : (
               <Typography variant="body1">
-                Cantidad de alumnos registrados: <b>{alumnos.length}</b>
+                Cantidad de alumnos encontrados: <b>{alumnos.length}</b>
               </Typography>
             )}
           </Paper>
-          {/* Aquí puedes mostrar más información del historial */}
         </Box>
+
+        <PrediccionesAlumnoDialog
+          open={openDialog}
+          onClose={() => setOpenDialog(false)}
+          alumno={selectedAlumno}
+          onNotaDeleted={handleNotaDeleted}
+        />
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </div>
   );

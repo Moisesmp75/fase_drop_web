@@ -8,7 +8,9 @@ import {
   TextField,
   Grid,
   MenuItem,
-  Box
+  Box,
+  Snackbar,
+  Alert
 } from '@mui/material';
 
 const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
@@ -24,11 +26,54 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
     cta: '',
     ingles: '',
     asistencia: '',
-    conducta: ''
+    conducta: '',
+    comentario: ''
   });
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'error'
+  });
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const validateNumericInput = (value, name) => {
+    // No permitir la letra 'e'
+    if (value.includes('e')) return false;
+
+    // Si está vacío, permitirlo
+    if (value === '') return true;
+
+    // Si es un solo dígito, permitirlo
+    if (/^\d$/.test(value)) return true;
+
+    // Si son dos dígitos, validar el número completo
+    if (/^\d{2}$/.test(value)) {
+      const num = parseInt(value);
+      return num >= 5 && num <= 20;
+    }
+
+    return false;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validación especial para campos numéricos
+    if (['matematicas', 'comunicacion', 'ciencias_sociales', 'cta', 'ingles', 'asistencia', 'conducta'].includes(name)) {
+      if (!validateNumericInput(value, name)) {
+        setSnackbar({
+          open: true,
+          message: 'El valor debe estar entre 5 y 20',
+          severity: 'error'
+        });
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -36,6 +81,22 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
   };
 
   const handleSubmit = () => {
+    // Validar que todos los campos numéricos estén dentro del rango
+    const numericFields = ['matematicas', 'comunicacion', 'ciencias_sociales', 'cta', 'ingles', 'asistencia', 'conducta'];
+    const invalidFields = numericFields.filter(field => {
+      const value = Number(formData[field]);
+      return isNaN(value) || value < 5 || value > 20;
+    });
+
+    if (invalidFields.length > 0) {
+      setSnackbar({
+        open: true,
+        message: 'Todos los campos numéricos deben estar entre 5 y 20',
+        severity: 'error'
+      });
+      return;
+    }
+
     const notaData = {
       ...formData,
       alumnoId: alumno.id,
@@ -147,6 +208,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -159,6 +221,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -171,6 +234,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -183,6 +247,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -195,6 +260,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -207,6 +273,7 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -219,6 +286,19 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
                 onChange={handleChange}
                 inputProps={{ min: 5, max: 20 }}
                 required
+                helperText="Valor entre 5 y 20"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Comentario"
+                name="comentario"
+                value={formData.comentario}
+                onChange={handleChange}
+                multiline
+                rows={3}
+                placeholder="Ingrese un comentario sobre la nota (opcional)"
               />
             </Grid>
           </Grid>
@@ -230,6 +310,16 @@ const RegistrarNotaDialog = ({ open, onClose, alumno, onSave }) => {
           Guardar
         </Button>
       </DialogActions>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
